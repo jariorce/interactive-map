@@ -3,36 +3,51 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Интерактивная карта городских объектов</title>
+  <title>Интерактивная карта УрФУ</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
     :root{
-      --bg:#0b1020;
-      --card:#111a33;
-      --card2:#0f1730;
-      --text:#e8ecff;
-      --muted:#aab3d6;
-      --border:rgba(255,255,255,.10);
-      --shadow:0 12px 40px rgba(0,0,0,.35);
-      --radius:16px;
+      /* Розово-фиолетовая палитра */
+      --edu:        #6a4cff;  /* учебные корпуса */
+      --sport:      #ff5fb3;  /* спортивные корпуса */
+      --stops:      #b08cff;  /* остановки/транспорт */
+      --places:     #ff92d0;  /* интересные места */
+
+      --bg-a: #ffd3f1;
+      --bg-b: #d9d0ff;
+      --bg-c: #9c8cff;
+
+      --text: #231942;
+      --muted:#5e4bb5;
+
+      --card: rgba(255,255,255,.86);
+      --stroke: rgba(35,25,66,.10);
+      --shadow: 0 18px 45px rgba(60,30,140,.22);
+      --radius: 18px;
     }
+
     *{ box-sizing:border-box; }
+
     body{
       margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
-      background: radial-gradient(1200px 600px at 20% 0%, rgba(108,99,255,.25), transparent 60%),
-                  radial-gradient(900px 500px at 80% 20%, rgba(0,200,255,.18), transparent 55%),
-                  var(--bg);
-      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 550px at 15% 10%, rgba(255,100,190,.28), transparent 60%),
+        radial-gradient(900px 600px at 85% 20%, rgba(120,90,255,.25), transparent 55%),
+        linear-gradient(135deg, var(--bg-a), var(--bg-b), var(--bg-c));
+      min-height: 100vh;
     }
+
     .wrap{
-      max-width: 1120px;
+      max-width: 1200px;
       margin: 0 auto;
-      padding: 18px 16px 22px;
+      padding: 20px 16px 28px;
     }
-    header{
+
+    .topbar{
       display:flex;
       gap:14px;
       align-items:flex-start;
@@ -40,148 +55,182 @@
       flex-wrap:wrap;
       margin-bottom: 14px;
     }
-    .title{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-width: 280px;
+
+    .hero{
+      background: linear-gradient(135deg, rgba(255,255,255,.92), rgba(255,255,255,.80));
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 16px;
+      flex: 1 1 560px;
+      min-width: 320px;
     }
-    .title h1{
-      margin:0;
-      font-size: 22px;
+
+    .hero h1{
+      margin:0 0 6px;
+      font-size: 24px;
       letter-spacing: .2px;
     }
-    .title p{
+
+    .hero p{
       margin:0;
-      color:var(--muted);
-      font-size: 14px;
+      color: var(--muted);
+      font-size: 14.5px;
       line-height: 1.35;
-      max-width: 640px;
+      max-width: 860px;
     }
-    .pillrow{
+
+    .chips{
       display:flex;
-      gap:10px;
       flex-wrap:wrap;
-      align-items:center;
+      gap:10px;
       justify-content:flex-end;
+      align-items:flex-start;
+      flex: 0 1 360px;
     }
-    .pill{
-      border: 1px solid var(--border);
-      background: rgba(255,255,255,.05);
-      padding: 8px 10px;
+
+    .chip{
+      background: rgba(255,255,255,.65);
+      border: 1px solid var(--stroke);
       border-radius: 999px;
+      padding: 8px 10px;
+      box-shadow: 0 8px 18px rgba(60,30,140,.10);
       font-size: 12.5px;
       color: var(--muted);
-      backdrop-filter: blur(8px);
+      white-space: nowrap;
     }
 
     .grid{
       display:grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1.55fr .85fr;
       gap: 14px;
+      align-items:start;
     }
-    @media (min-width: 980px){
-      .grid{
-        grid-template-columns: 1.55fr .85fr;
-        align-items: start;
-      }
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns:1fr; }
     }
 
     .card{
-      border:1px solid var(--border);
-      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      background: var(--card);
+      border: 1px solid var(--stroke);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       overflow:hidden;
     }
-    .card .hd{
-      padding: 12px 14px;
-      border-bottom:1px solid var(--border);
-      background: rgba(0,0,0,.12);
+
+    .card-hd{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap: 10px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--stroke);
+      background: rgba(255,255,255,.55);
     }
-    .card .hd .hdt{
+
+    .card-hd .ttl{
+      margin:0;
       font-size: 13px;
       color: var(--muted);
-      margin:0;
-    }
-    .card .bd{
-      padding: 12px 14px;
+      letter-spacing:.2px;
     }
 
     #map{
       width: 100%;
-      height: min(72vh, 760px);
-      border-radius: 0 0 var(--radius) var(--radius);
+      height: min(74vh, 780px);
     }
+
+    .panel{
+      padding: 14px 14px 16px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .section-title{
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+      letter-spacing:.2px;
+    }
+
+    .btnrow{
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+    }
+
+    .btn{
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,.65);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 13px;
+      color: var(--text);
+      cursor:pointer;
+      box-shadow: 0 10px 22px rgba(60,30,140,.10);
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.80); }
+    .btn:active{ transform: translateY(1px); }
 
     .legend{
       display:flex;
       flex-direction:column;
-      gap:10px;
+      gap: 10px;
+      font-size: 14px;
     }
-    .legend .item{
+
+    .legend-item{
       display:flex;
       align-items:center;
-      gap:10px;
+      gap: 10px;
       padding: 10px 10px;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      background: rgba(0,0,0,.12);
+      border: 1px solid var(--stroke);
+      border-radius: 14px;
+      background: rgba(255,255,255,.55);
     }
+
     .dot{
-      width: 12px;
-      height: 12px;
+      width: 14px;
+      height: 14px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.45);
+      border: 1px solid rgba(0,0,0,.25);
       flex: 0 0 auto;
     }
-    .item .txt{
+
+    .legend-text{
       display:flex;
       flex-direction:column;
-      gap:2px;
+      gap: 2px;
       line-height:1.2;
     }
-    .item .txt b{ font-size: 13.5px; }
-    .item .txt span{ font-size: 12px; color: var(--muted); }
+    .legend-text b{ font-size: 13.5px; }
+    .legend-text span{ font-size: 12px; color: var(--muted); }
 
-    .btn{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border:1px solid var(--border);
-      background: rgba(255,255,255,.06);
-      color: var(--text);
-      text-decoration:none;
-      font-size: 13px;
-      cursor:pointer;
-      user-select:none;
+    .hint{
+      padding: 10px 10px;
+      border: 1px dashed rgba(35,25,66,.20);
+      border-radius: 14px;
+      background: rgba(255,255,255,.50);
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
     }
-    .btn:hover{ background: rgba(255,255,255,.10); }
 
     footer{
       margin-top: 14px;
-      color: var(--muted);
+      text-align:center;
+      color: rgba(35,25,66,.70);
       font-size: 12px;
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-      opacity:.95;
     }
 
-    /* Leaflet controls cosmetic */
+    /* Leaflet cosmetics */
     .leaflet-control-layers{
-      border-radius: 12px !important;
-      border: 1px solid rgba(0,0,0,.12) !important;
-      box-shadow: 0 10px 26px rgba(0,0,0,.22) !important;
+      border-radius: 14px !important;
       overflow:hidden;
+      box-shadow: 0 14px 30px rgba(60,30,140,.16) !important;
     }
     .leaflet-popup-content-wrapper{
       border-radius: 14px !important;
@@ -189,162 +238,141 @@
     .leaflet-popup-content{
       margin: 12px 12px 10px !important;
       font-size: 13px;
-      line-height: 1.35;
-    }
-    .kv{
-      margin-top:8px;
-      padding-top:8px;
-      border-top:1px dashed rgba(0,0,0,.15);
-      color:#333;
-      font-size:12px;
+      line-height: 1.25;
     }
   </style>
 </head>
 
 <body>
   <div class="wrap">
-    <header>
-      <div class="title">
-        <h1>Интерактивная карта городских объектов</h1>
+    <div class="topbar">
+      <div class="hero">
+        <h1>Интерактивная карта объектов УрФУ</h1>
         <p>
-          Данные подготовлены в QGIS и экспортированы в GeoJSON. На карте можно включать/выключать слои и смотреть сведения об объектах по клику.
+          Карта учебных и спортивных корпусов (и сопутствующих точек) для города Екатеринбурга.
+          Данные подготовлены в QGIS и экспортированы в GeoJSON, визуализация выполнена на Leaflet.
         </p>
       </div>
 
-      <div class="pillrow">
-        <div class="pill">QGIS → GeoJSON</div>
-        <div class="pill">Leaflet + OpenStreetMap</div>
-        <div class="pill">GitHub Pages</div>
+      <div class="chips">
+        <div class="chip">QGIS → GeoJSON</div>
+        <div class="chip">Leaflet + OpenStreetMap</div>
+        <div class="chip">Публичная ссылка (GitHub Pages)</div>
       </div>
-    </header>
+    </div>
 
     <div class="grid">
       <div class="card">
-        <div class="hd">
-          <p class="hdt">Карта</p>
-          <button class="btn" id="btnFit">Показать все объекты</button>
+        <div class="card-hd">
+          <p class="ttl">Карта</p>
+          <div class="btnrow">
+            <button class="btn" id="btnFit">Показать всё</button>
+            <button class="btn" id="btnEdu">Только учебные</button>
+            <button class="btn" id="btnSport">Только спортивные</button>
+          </div>
         </div>
         <div id="map"></div>
       </div>
 
       <div class="card">
-        <div class="hd">
-          <p class="hdt">Легенда и подсказки</p>
+        <div class="card-hd">
+          <p class="ttl">Легенда и управление</p>
         </div>
-        <div class="bd">
+
+        <div class="panel">
           <div class="legend">
-            <div class="item">
-              <span class="dot" style="background:#1f78b4;"></span>
-              <div class="txt">
-                <b>Учебные корпуса</b>
-                <span>университеты, корпуса, учебные здания</span>
-              </div>
-            </div>
-            <div class="item">
-              <span class="dot" style="background:#33a02c;"></span>
-              <div class="txt">
-                <b>Спортивные сооружения</b>
-                <span>залы, комплексы, стадионы и т.п.</span>
-              </div>
-            </div>
-            <div class="item">
-              <span class="dot" style="background:#e31a1c;"></span>
-              <div class="txt">
-                <b>Остановки</b>
-                <span>транспортные остановки/узлы</span>
-              </div>
-            </div>
-            <div class="item">
-              <span class="dot" style="background:#ff7f00;"></span>
-              <div class="txt">
-                <b>Интересные места</b>
-                <span>точки притяжения, места отдыха</span>
+            <div class="legend-item">
+              <span class="dot" style="background: var(--edu);"></span>
+              <div class="legend-text">
+                <b>Учебные корпуса УрФУ</b>
+                <span>единый цвет для всех учебных зданий</span>
               </div>
             </div>
 
-            <div style="margin-top:10px; color:var(--muted); font-size:12.5px; line-height:1.35;">
-              <b style="color:var(--text);">Как пользоваться:</b><br>
-              • колесо мыши — масштаб<br>
-              • удерживать ЛКМ — перемещение<br>
-              • клик по точке — карточка объекта<br>
-              • справа сверху — переключатель слоёв
+            <div class="legend-item">
+              <span class="dot" style="background: var(--sport);"></span>
+              <div class="legend-text">
+                <b>Спортивные корпуса УрФУ</b>
+                <span>отдельный цвет для спортивных корпусов</span>
+              </div>
             </div>
+
+            <div class="legend-item">
+              <span class="dot" style="background: var(--stops);"></span>
+              <div class="legend-text">
+                <b>Остановки / транспорт</b>
+                <span>доп. слой для ориентации</span>
+              </div>
+            </div>
+
+            <div class="legend-item">
+              <span class="dot" style="background: var(--places);"></span>
+              <div class="legend-text">
+                <b>Интересные места</b>
+                <span>точки притяжения рядом с объектами</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="hint">
+            <b>Как пользоваться:</b><br>
+            • Колесо мыши — масштаб<br>
+            • Перетаскивание — перемещение<br>
+            • Клик по точке — только название объекта (без лишнего)<br>
+            • Переключатель слоёв — справа сверху на карте
           </div>
         </div>
       </div>
     </div>
 
     <footer>
-      <div>© Проект для учебной дисциплины «Технологии презентации и визуализации контента»</div>
-      <div>Подложка: OpenStreetMap · Визуализация: Leaflet</div>
+      Учебный проект · «Технологии презентации и визуализации контента» · УрФУ · Екатеринбург
     </footer>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // --- 1) карта (центр = Екатеринбург, но потом всё равно авто-приближение)
-    const map = L.map('map', { zoomControl: true }).setView([56.8389, 60.6057], 12);
+    // Берём цвета из CSS-переменных (так надёжнее)
+    function cssVar(name){
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
 
+    const COLORS = {
+      edu: cssVar('--edu'),
+      sport: cssVar('--sport'),
+      stops: cssVar('--stops'),
+      places: cssVar('--places'),
+    };
+
+    // 1) Карта (Екатеринбург)
+    const map = L.map('map').setView([56.8389, 60.6057], 12);
+
+    // 2) Подложка (без ключей)
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    // --- 2) helpers: вытаскиваем поля "как бы они ни назывались"
-    function pickProp(props, keys) {
-      if (!props) return '';
-      for (const k of keys) {
-        if (props[k] !== undefined && props[k] !== null && String(props[k]).trim() !== '') {
-          return String(props[k]).trim();
-        }
+    // 3) ТОЛЬКО НАЗВАНИЕ: пытаемся найти name/Название/title
+    function getName(props){
+      if (!props) return 'Без названия';
+      const candidates = [
+        props.name, props.Name, props.title, props.Title,
+        props['Название'], props['название'],
+        props['Наименование'], props['наименование']
+      ];
+      for (const v of candidates){
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v).trim();
       }
-      return '';
+      return 'Без названия';
     }
 
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'","&#039;");
-    }
-
-    function propsToHtml(props, exclude = []) {
-      if (!props) return '';
-      const ex = new Set(exclude);
-      const rows = Object.entries(props)
-        .filter(([k,v]) => !ex.has(k) && v !== null && v !== undefined && String(v).trim() !== '')
-        .map(([k,v]) => `<div><b>${escapeHtml(k)}:</b> ${escapeHtml(v)}</div>`);
-      if (!rows.length) return '';
-      return `<div class="kv">${rows.join('')}</div>`;
-    }
-
-    function makePopup(props) {
-      // попытки найти "название" и "тип" по разным вариантам полей
-      const title = pickProp(props, ['name','Name','title','Title','название','Название','NAZVANIE','объект','Объект','object','Object']) || 'Без названия';
-      const type  = pickProp(props, ['type','Type','категория','Категория','вид','Вид','category','Category']);
-      const desc  = pickProp(props, ['description','Description','описание','Описание','note','Note','comment','Комментарий']);
-
-      // если у слоя нестандартные поля — мы всё равно покажем ВСЕ свойства ниже
-      const allProps = propsToHtml(props, ['name','Name','title','Title','название','Название','type','Type','категория','Категория','вид','Вид','description','Description','описание','Описание','note','Note','comment','Комментарий']);
-
-      return `
-        <div>
-          <div style="font-size:14px;"><b>${escapeHtml(title)}</b></div>
-          ${type ? `<div style="margin-top:2px; opacity:.85;"><i>${escapeHtml(type)}</i></div>` : ''}
-          ${desc ? `<div style="margin-top:6px;">${escapeHtml(desc)}</div>` : ''}
-          ${allProps}
-        </div>
-      `;
-    }
-
-    // --- 3) загрузка слоёв
-    function loadLayer(file, color, label) {
-      return fetch(file, { cache: "no-store" })
+    // 4) Загрузка слоя
+    function loadLayer(file, color, label){
+      return fetch(file, { cache: 'no-store' })
         .then(r => {
-          if (!r.ok) throw new Error(`Не удалось загрузить ${file}: HTTP ${r.status}`);
+          if (!r.ok) throw new Error(`${file}: HTTP ${r.status}`);
           return r.json();
         })
         .then(data => {
@@ -352,44 +380,97 @@
             pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
               radius: 6,
               fillColor: color,
-              color: 'rgba(0,0,0,.75)',
+              color: 'rgba(0,0,0,.55)',
               weight: 1,
-              fillOpacity: 0.85
+              fillOpacity: 0.92
             }),
             onEachFeature: (feature, lyr) => {
-              const props = feature && feature.properties ? feature.properties : {};
-              lyr.bindPopup(makePopup(props), { maxWidth: 340 });
+              const name = getName(feature.properties);
+              lyr.bindPopup(`<b>${name}</b>`);
             }
-          }).addTo(map);
-
+          });
           return { label, layer };
         });
     }
 
-    let allBounds = null;
+    // 5) Подключаем 4 слоя
+    const layersState = {
+      edu: null,
+      sport: null,
+      stops: null,
+      places: null,
+      bounds: null
+    };
 
     Promise.all([
-      loadLayer('education.geojson', '#1f78b4', 'Учебные корпуса'),
-      loadLayer('sports.geojson', '#33a02c', 'Спортивные сооружения'),
-      loadLayer('stops.geojson', '#e31a1c', 'Остановки'),
-      loadLayer('interesting_places.geojson', '#ff7f00', 'Интересные места')
-    ]).then(items => {
+      loadLayer('education.geojson', COLORS.edu, 'Учебные корпуса УрФУ'),
+      loadLayer('sports.geojson', COLORS.sport, 'Спортивные корпуса УрФУ'),
+      loadLayer('stops.geojson', COLORS.stops, 'Остановки / транспорт'),
+      loadLayer('interesting_places.geojson', COLORS.places, 'Интересные места')
+    ]).then(([edu, sport, stops, places]) => {
+      layersState.edu = edu.layer.addTo(map);
+      layersState.sport = sport.layer.addTo(map);
+      layersState.stops = stops.layer.addTo(map);
+      layersState.places = places.layer.addTo(map);
+
       const overlays = {};
-      items.forEach(({label, layer}) => {
-        overlays[label] = layer;
-        const b = layer.getBounds();
-        if (b && b.isValid()) allBounds = allBounds ? allBounds.extend(b) : b;
-      });
+      overlays[edu.label] = layersState.edu;
+      overlays[sport.label] = layersState.sport;
+      overlays[stops.label] = layersState.stops;
+      overlays[places.label] = layersState.places;
 
-      L.control.layers(null, overlays, { collapsed: false }).addTo(map);
-      if (allBounds && allBounds.isValid()) map.fitBounds(allBounds, { padding: [24,24] });
+      // Переключатель слоёв (классно для защиты)
+      L.control.layers(null, overlays, { collapsed: true }).addTo(map);
 
+      // Общий bounds
+      const all = [layersState.edu, layersState.sport, layersState.stops, layersState.places]
+        .map(l => l.getBounds())
+        .filter(b => b && b.isValid());
+
+      if (all.length){
+        const merged = all.reduce((acc, b) => acc.extend(b), all[0]);
+        layersState.bounds = merged;
+        map.fitBounds(merged, { padding: [22,22] });
+      }
+
+      // Кнопки управления
       document.getElementById('btnFit').addEventListener('click', () => {
-        if (allBounds && allBounds.isValid()) map.fitBounds(allBounds, { padding: [24,24] });
+        if (layersState.bounds?.isValid()) map.fitBounds(layersState.bounds, { padding:[22,22] });
       });
+
+      document.getElementById('btnEdu').addEventListener('click', () => {
+        showOnly(['edu']);
+      });
+
+      document.getElementById('btnSport').addEventListener('click', () => {
+        showOnly(['sport']);
+      });
+
+      function showOnly(keys){
+        const allKeys = ['edu','sport','stops','places'];
+        for (const k of allKeys){
+          const layer = layersState[k];
+          if (!layer) continue;
+          if (keys.includes(k)){
+            if (!map.hasLayer(layer)) layer.addTo(map);
+          } else {
+            if (map.hasLayer(layer)) map.removeLayer(layer);
+          }
+        }
+        // fit по видимым слоям
+        const visibleBounds = allKeys
+          .filter(k => layersState[k] && map.hasLayer(layersState[k]))
+          .map(k => layersState[k].getBounds())
+          .filter(b => b && b.isValid());
+
+        if (visibleBounds.length){
+          const merged = visibleBounds.reduce((acc,b)=>acc.extend(b), visibleBounds[0]);
+          map.fitBounds(merged, { padding:[22,22] });
+        }
+      }
     }).catch(err => {
       console.error(err);
-      alert("Ошибка загрузки слоёв. Проверь имена файлов и что GeoJSON экспортирован в EPSG:4326.");
+      alert('Ошибка загрузки слоёв. Проверь, что файлы .geojson лежат рядом с index.html и экспортированы в EPSG:4326.');
     });
   </script>
 </body>
