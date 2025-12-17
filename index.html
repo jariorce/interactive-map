@@ -21,22 +21,19 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
-  // 1. Создаём карту (Екатеринбург)
   const map = L.map('map').setView([56.8389, 60.6057], 12);
 
-  // 2. Подложка
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap'
   }).addTo(map);
 
-  // 3. Функция загрузки слоя
   function loadLayer(file, color, name) {
     return fetch(file)
       .then(r => r.json())
       .then(data => {
         const layer = L.geoJSON(data, {
-          pointToLayer: (feature, latlng) =>
+          pointToLayer: (f, latlng) =>
             L.circleMarker(latlng, {
               radius: 6,
               fillColor: color,
@@ -44,43 +41,35 @@
               weight: 1,
               fillOpacity: 0.8
             }),
-          onEachFeature: (feature, layer) => {
-            const p = feature.properties || {};
-            layer.bindPopup(
+          onEachFeature: (f, l) => {
+            const p = f.properties || {};
+            l.bindPopup(
               `<b>${p.name || ''}</b><br>
                ${p.type || ''}<br>
                ${p.description || ''}`
             );
           }
         }).addTo(map);
-
         return { name, layer };
       });
   }
 
-  // 4. Загружаем все слои
   Promise.all([
-    loadLayer('Учебные корпуса.geojson', '#1f78b4', 'Учебные корпуса'),
-    loadLayer('Спортивные сооружения.geojson', '#33a02c', 'Спортивные сооружения'),
-    loadLayer('Остановки.geojson', '#e31a1c', 'Остановки'),
-    loadLayer('Интересные места.geojson', '#ff7f00', 'Интересные места')
-  ]).then(results => {
-
+    loadLayer('education.geojson', '#1f78b4', 'Учебные корпуса'),
+    loadLayer('sports.geojson', '#33a02c', 'Спортивные сооружения'),
+    loadLayer('stops.geojson', '#e31a1c', 'Остановки'),
+    loadLayer('interesting_places.geojson', '#ff7f00', 'Интересные места')
+  ]).then(layers => {
     const overlays = {};
-    const bounds = [];
+    let bounds;
 
-    results.forEach(r => {
-      overlays[r.name] = r.layer;
-      bounds.push(r.layer.getBounds());
+    layers.forEach(l => {
+      overlays[l.name] = l.layer;
+      bounds = bounds ? bounds.extend(l.layer.getBounds()) : l.layer.getBounds();
     });
 
-    // Переключатель слоёв
     L.control.layers(null, overlays).addTo(map);
-
-    // Автоприближение
-    const allBounds = bounds.reduce((acc, b) => acc.extend(b), bounds[0]);
-    if (allBounds.isValid()) map.fitBounds(allBounds, { padding: [20, 20] });
-
+    if (bounds?.isValid()) map.fitBounds(bounds, { padding: [20,20] });
   });
 </script>
 
