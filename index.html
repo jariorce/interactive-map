@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Интерактивная карта</title>
+
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    h1 {
+      text-align: center;
+      padding: 10px;
+    }
+    #map {
+      width: 100%;
+      height: 85vh;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>Интерактивная карта проекта</h1>
+<div id="map"></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  var map = L.map('map').setView([54.7351, 55.9587], 12); // Уфа
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+  }).addTo(map);
+
+  fetch('map.geojson')
+    .then(response => response.json())
+    .then(data => {
+      L.geoJSON(data, {
+        onEachFeature: function (feature, layer) {
+          if (feature.properties) {
+            layer.bindPopup(
+              '<b>' + (feature.properties.name || '') + '</b><br>' +
+              (feature.properties.type || '') + '<br>' +
+              (feature.properties.description || '')
+            );
+          }
+        }
+      }).addTo(map);
+    });
+</script>
+
+</body>
+</html>
