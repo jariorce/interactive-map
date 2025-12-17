@@ -1,77 +1,396 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Интерактивная карта Екатеринбурга</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Интерактивная карта городских объектов</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
   <style>
-    body { margin: 0; font-family: Arial, sans-serif; }
-    h1 { text-align: center; margin: 10px; }
-    #map { width: 100%; height: 85vh; }
+    :root{
+      --bg:#0b1020;
+      --card:#111a33;
+      --card2:#0f1730;
+      --text:#e8ecff;
+      --muted:#aab3d6;
+      --border:rgba(255,255,255,.10);
+      --shadow:0 12px 40px rgba(0,0,0,.35);
+      --radius:16px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      background: radial-gradient(1200px 600px at 20% 0%, rgba(108,99,255,.25), transparent 60%),
+                  radial-gradient(900px 500px at 80% 20%, rgba(0,200,255,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 18px 16px 22px;
+    }
+    header{
+      display:flex;
+      gap:14px;
+      align-items:flex-start;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom: 14px;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 280px;
+    }
+    .title h1{
+      margin:0;
+      font-size: 22px;
+      letter-spacing: .2px;
+    }
+    .title p{
+      margin:0;
+      color:var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+      max-width: 640px;
+    }
+    .pillrow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .pill{
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.05);
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12.5px;
+      color: var(--muted);
+      backdrop-filter: blur(8px);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+    @media (min-width: 980px){
+      .grid{
+        grid-template-columns: 1.55fr .85fr;
+        align-items: start;
+      }
+    }
+
+    .card{
+      border:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding: 12px 14px;
+      border-bottom:1px solid var(--border);
+      background: rgba(0,0,0,.12);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .card .hd .hdt{
+      font-size: 13px;
+      color: var(--muted);
+      margin:0;
+    }
+    .card .bd{
+      padding: 12px 14px;
+    }
+
+    #map{
+      width: 100%;
+      height: min(72vh, 760px);
+      border-radius: 0 0 var(--radius) var(--radius);
+    }
+
+    .legend{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .legend .item{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding: 10px 10px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: rgba(0,0,0,.12);
+    }
+    .dot{
+      width: 12px;
+      height: 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.45);
+      flex: 0 0 auto;
+    }
+    .item .txt{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      line-height:1.2;
+    }
+    .item .txt b{ font-size: 13.5px; }
+    .item .txt span{ font-size: 12px; color: var(--muted); }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border:1px solid var(--border);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      text-decoration:none;
+      font-size: 13px;
+      cursor:pointer;
+      user-select:none;
+    }
+    .btn:hover{ background: rgba(255,255,255,.10); }
+
+    footer{
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+      opacity:.95;
+    }
+
+    /* Leaflet controls cosmetic */
+    .leaflet-control-layers{
+      border-radius: 12px !important;
+      border: 1px solid rgba(0,0,0,.12) !important;
+      box-shadow: 0 10px 26px rgba(0,0,0,.22) !important;
+      overflow:hidden;
+    }
+    .leaflet-popup-content-wrapper{
+      border-radius: 14px !important;
+    }
+    .leaflet-popup-content{
+      margin: 12px 12px 10px !important;
+      font-size: 13px;
+      line-height: 1.35;
+    }
+    .kv{
+      margin-top:8px;
+      padding-top:8px;
+      border-top:1px dashed rgba(0,0,0,.15);
+      color:#333;
+      font-size:12px;
+    }
   </style>
 </head>
 
 <body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Интерактивная карта городских объектов</h1>
+        <p>
+          Данные подготовлены в QGIS и экспортированы в GeoJSON. На карте можно включать/выключать слои и смотреть сведения об объектах по клику.
+        </p>
+      </div>
 
-<h1>Интерактивная карта городских объектов</h1>
-<div id="map"></div>
+      <div class="pillrow">
+        <div class="pill">QGIS → GeoJSON</div>
+        <div class="pill">Leaflet + OpenStreetMap</div>
+        <div class="pill">GitHub Pages</div>
+      </div>
+    </header>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <div class="grid">
+      <div class="card">
+        <div class="hd">
+          <p class="hdt">Карта</p>
+          <button class="btn" id="btnFit">Показать все объекты</button>
+        </div>
+        <div id="map"></div>
+      </div>
 
-<script>
-  const map = L.map('map').setView([56.8389, 60.6057], 12);
+      <div class="card">
+        <div class="hd">
+          <p class="hdt">Легенда и подсказки</p>
+        </div>
+        <div class="bd">
+          <div class="legend">
+            <div class="item">
+              <span class="dot" style="background:#1f78b4;"></span>
+              <div class="txt">
+                <b>Учебные корпуса</b>
+                <span>университеты, корпуса, учебные здания</span>
+              </div>
+            </div>
+            <div class="item">
+              <span class="dot" style="background:#33a02c;"></span>
+              <div class="txt">
+                <b>Спортивные сооружения</b>
+                <span>залы, комплексы, стадионы и т.п.</span>
+              </div>
+            </div>
+            <div class="item">
+              <span class="dot" style="background:#e31a1c;"></span>
+              <div class="txt">
+                <b>Остановки</b>
+                <span>транспортные остановки/узлы</span>
+              </div>
+            </div>
+            <div class="item">
+              <span class="dot" style="background:#ff7f00;"></span>
+              <div class="txt">
+                <b>Интересные места</b>
+                <span>точки притяжения, места отдыха</span>
+              </div>
+            </div>
 
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap'
-  }).addTo(map);
+            <div style="margin-top:10px; color:var(--muted); font-size:12.5px; line-height:1.35;">
+              <b style="color:var(--text);">Как пользоваться:</b><br>
+              • колесо мыши — масштаб<br>
+              • удерживать ЛКМ — перемещение<br>
+              • клик по точке — карточка объекта<br>
+              • справа сверху — переключатель слоёв
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  function loadLayer(file, color, name) {
-    return fetch(file)
-      .then(r => r.json())
-      .then(data => {
-        const layer = L.geoJSON(data, {
-          pointToLayer: (f, latlng) =>
-            L.circleMarker(latlng, {
+    <footer>
+      <div>© Проект для учебной дисциплины «Технологии презентации и визуализации контента»</div>
+      <div>Подложка: OpenStreetMap · Визуализация: Leaflet</div>
+    </footer>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // --- 1) карта (центр = Екатеринбург, но потом всё равно авто-приближение)
+    const map = L.map('map', { zoomControl: true }).setView([56.8389, 60.6057], 12);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    // --- 2) helpers: вытаскиваем поля "как бы они ни назывались"
+    function pickProp(props, keys) {
+      if (!props) return '';
+      for (const k of keys) {
+        if (props[k] !== undefined && props[k] !== null && String(props[k]).trim() !== '') {
+          return String(props[k]).trim();
+        }
+      }
+      return '';
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function propsToHtml(props, exclude = []) {
+      if (!props) return '';
+      const ex = new Set(exclude);
+      const rows = Object.entries(props)
+        .filter(([k,v]) => !ex.has(k) && v !== null && v !== undefined && String(v).trim() !== '')
+        .map(([k,v]) => `<div><b>${escapeHtml(k)}:</b> ${escapeHtml(v)}</div>`);
+      if (!rows.length) return '';
+      return `<div class="kv">${rows.join('')}</div>`;
+    }
+
+    function makePopup(props) {
+      // попытки найти "название" и "тип" по разным вариантам полей
+      const title = pickProp(props, ['name','Name','title','Title','название','Название','NAZVANIE','объект','Объект','object','Object']) || 'Без названия';
+      const type  = pickProp(props, ['type','Type','категория','Категория','вид','Вид','category','Category']);
+      const desc  = pickProp(props, ['description','Description','описание','Описание','note','Note','comment','Комментарий']);
+
+      // если у слоя нестандартные поля — мы всё равно покажем ВСЕ свойства ниже
+      const allProps = propsToHtml(props, ['name','Name','title','Title','название','Название','type','Type','категория','Категория','вид','Вид','description','Description','описание','Описание','note','Note','comment','Комментарий']);
+
+      return `
+        <div>
+          <div style="font-size:14px;"><b>${escapeHtml(title)}</b></div>
+          ${type ? `<div style="margin-top:2px; opacity:.85;"><i>${escapeHtml(type)}</i></div>` : ''}
+          ${desc ? `<div style="margin-top:6px;">${escapeHtml(desc)}</div>` : ''}
+          ${allProps}
+        </div>
+      `;
+    }
+
+    // --- 3) загрузка слоёв
+    function loadLayer(file, color, label) {
+      return fetch(file, { cache: "no-store" })
+        .then(r => {
+          if (!r.ok) throw new Error(`Не удалось загрузить ${file}: HTTP ${r.status}`);
+          return r.json();
+        })
+        .then(data => {
+          const layer = L.geoJSON(data, {
+            pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
               radius: 6,
               fillColor: color,
-              color: '#000',
+              color: 'rgba(0,0,0,.75)',
               weight: 1,
-              fillOpacity: 0.8
+              fillOpacity: 0.85
             }),
-          onEachFeature: (f, l) => {
-            const p = f.properties || {};
-            l.bindPopup(
-              `<b>${p.name || ''}</b><br>
-               ${p.type || ''}<br>
-               ${p.description || ''}`
-            );
-          }
-        }).addTo(map);
-        return { name, layer };
+            onEachFeature: (feature, lyr) => {
+              const props = feature && feature.properties ? feature.properties : {};
+              lyr.bindPopup(makePopup(props), { maxWidth: 340 });
+            }
+          }).addTo(map);
+
+          return { label, layer };
+        });
+    }
+
+    let allBounds = null;
+
+    Promise.all([
+      loadLayer('education.geojson', '#1f78b4', 'Учебные корпуса'),
+      loadLayer('sports.geojson', '#33a02c', 'Спортивные сооружения'),
+      loadLayer('stops.geojson', '#e31a1c', 'Остановки'),
+      loadLayer('interesting_places.geojson', '#ff7f00', 'Интересные места')
+    ]).then(items => {
+      const overlays = {};
+      items.forEach(({label, layer}) => {
+        overlays[label] = layer;
+        const b = layer.getBounds();
+        if (b && b.isValid()) allBounds = allBounds ? allBounds.extend(b) : b;
       });
-  }
 
-  Promise.all([
-    loadLayer('education.geojson', '#1f78b4', 'Учебные корпуса'),
-    loadLayer('sports.geojson', '#33a02c', 'Спортивные сооружения'),
-    loadLayer('stops.geojson', '#e31a1c', 'Остановки'),
-    loadLayer('interesting_places.geojson', '#ff7f00', 'Интересные места')
-  ]).then(layers => {
-    const overlays = {};
-    let bounds;
+      L.control.layers(null, overlays, { collapsed: false }).addTo(map);
+      if (allBounds && allBounds.isValid()) map.fitBounds(allBounds, { padding: [24,24] });
 
-    layers.forEach(l => {
-      overlays[l.name] = l.layer;
-      bounds = bounds ? bounds.extend(l.layer.getBounds()) : l.layer.getBounds();
+      document.getElementById('btnFit').addEventListener('click', () => {
+        if (allBounds && allBounds.isValid()) map.fitBounds(allBounds, { padding: [24,24] });
+      });
+    }).catch(err => {
+      console.error(err);
+      alert("Ошибка загрузки слоёв. Проверь имена файлов и что GeoJSON экспортирован в EPSG:4326.");
     });
-
-    L.control.layers(null, overlays).addTo(map);
-    if (bounds?.isValid()) map.fitBounds(bounds, { padding: [20,20] });
-  });
-</script>
-
+  </script>
 </body>
 </html>
